@@ -16,6 +16,7 @@ from .const import (
     CLIENT_FILTER_NAMED,
     CLIENT_FILTER_WIRED,
     CLIENT_FILTER_WIRELESS,
+    CONF_CLIENT_ALIASES,
     CONF_CLIENT_FILTER,
     CONF_ENABLE_NEW_CLIENTS,
     CONF_TRACK_CLIENTS,
@@ -71,8 +72,13 @@ def _should_track_client(client: dict[str, Any], client_filter: str) -> bool:
     return True
 
 
-def _resolve_client_name(client: dict[str, Any], mac: str) -> str:
+def _resolve_client_name(
+    client: dict[str, Any], mac: str, aliases: dict[str, str] | None = None
+) -> str:
     """Resolve the best human-readable friendly name for a client."""
+    if aliases and (alias := aliases.get(mac)):
+        return alias
+
     name = (client.get("name") or "").strip()
     if name and name.lower() != mac:
         return name
@@ -141,6 +147,7 @@ async def async_setup_entry(
     coordinator = entry.runtime_data
     client_filter = entry.options.get(CONF_CLIENT_FILTER, "all")
     enable_default = entry.options.get(CONF_ENABLE_NEW_CLIENTS, True)
+    client_aliases: dict[str, str] = entry.options.get(CONF_CLIENT_ALIASES, {})
     tracked_macs: set[str] = set()
 
     @callback
@@ -153,7 +160,9 @@ async def async_setup_entry(
                 continue
             tracked_macs.add(mac)
             new_entities.append(
-                InstantOnClientTracker(coordinator, mac, enable_default)
+                InstantOnClientTracker(
+                    coordinator, mac, enable_default, client_aliases
+                )
             )
         if new_entities:
             async_add_entities(new_entities)
@@ -173,9 +182,11 @@ class InstantOnClientTracker(InstantOnEntity, ScannerEntity):
         coordinator: InstantOnCoordinator,
         mac: str,
         entity_registry_enabled_default: bool,
+        client_aliases: dict[str, str] | None = None,
     ) -> None:
         super().__init__(coordinator)
         self._mac = mac
+        self._aliases = client_aliases or {}
         self._attr_unique_id = f"{coordinator.site_id}_client_{mac}"
         self._attr_entity_registry_enabled_default = entity_registry_enabled_default
         self._last_label_names: tuple[str, ...] = ()
@@ -242,8 +253,8 @@ class InstantOnClientTracker(InstantOnEntity, ScannerEntity):
     def name(self) -> str:
         client = self._client
         if client is None:
-            return self._mac.upper()
-        return _resolve_client_name(client, self._mac)
+            return self._aliases.get(self._mac) or self._mac.upper()
+        return _resolve_client_name(client, self._mac, self._aliases)
 
     @property
     def source_type(self) -> SourceType:

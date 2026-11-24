@@ -44,7 +44,8 @@
           "scan_interval": "Lekérdezési időköz (másodperc)",
           "track_clients": "Hálózati kliensek követése",
           "client_filter": "Kliensszűrő",
-          "enable_new_clients": "Új kliensek automatikus engedélyezése"
+          "enable_new_clients": "Új kliensek automatikus engedélyezése",
+          "client_aliases": "Kliens nevek felülbírálása (soronként: mac=Barátságos név)"
         }
       }
     }

@@ -13,6 +13,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import ATTRIBUTION, DOMAIN
 from .coordinator import InstantOnCoordinator
+from .models import resolve_device_model
 
 
 def site_device_info(coordinator: InstantOnCoordinator) -> DeviceInfo:
@@ -36,12 +37,16 @@ def hardware_device_info(
     dev_id = device["id"]
     mac = device.get("macAddress")
     connections = {(CONNECTION_NETWORK_MAC, mac)} if mac else set()
+    model, model_id = resolve_device_model(
+        device.get("sku"), device.get("model"), device.get("deviceType")
+    )
     return DeviceInfo(
         identifiers={(DOMAIN, dev_id)},
         connections=connections,
         name=device.get("name") or device.get("defaultName") or dev_id,
         manufacturer="HPE Networking",
-        model=device.get("model") or device.get("deviceType"),
+        model=model,
+        model_id=model_id,
         sw_version=device.get("deviceSoftwareVersion"),
         serial_number=device.get("serialNumber"),
         via_device=(DOMAIN, coordinator.site_id),

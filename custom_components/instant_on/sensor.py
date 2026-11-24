@@ -44,6 +44,7 @@ class InstantOnDeviceSensorDescription(SensorEntityDescription):
     """Describe a hardware-device-level Instant On sensor."""
 
     value_fn: Callable[[InstantOnData, dict[str, Any]], Any]
+    attrs_fn: Callable[[dict[str, Any]], dict[str, Any]] | None = None
     exists_fn: Callable[[dict[str, Any]], bool] = lambda _dev: True
 
 
@@ -165,6 +166,13 @@ DEVICE_SENSORS: tuple[InstantOnDeviceSensorDescription, ...] = (
         key="health",
         translation_key="device_health",
         value_fn=lambda _d, dev: dev.get("health"),
+        attrs_fn=lambda dev: {
+            "sku": dev.get("sku"),
+            "hardware_model": dev.get("model"),
+            "uplink_device_name": (dev.get("uplinkSummary") or {}).get("deviceName"),
+            "uplink_port_number": (dev.get("uplinkSummary") or {}).get("portNumber"),
+            "uplink_speed": (dev.get("uplinkSummary") or {}).get("speed"),
+        },
     ),
     InstantOnDeviceSensorDescription(
         key="uptime",
@@ -365,6 +373,13 @@ class InstantOnDeviceSensor(InstantOnEntity, SensorEntity):
         if dev is None:
             return None
         return self.entity_description.value_fn(self.coordinator.data, dev)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        dev = self._device
+        if dev is None or self.entity_description.attrs_fn is None:
+            return None
+        return self.entity_description.attrs_fn(dev)
 
 
 class InstantOnRadioSensor(InstantOnEntity, SensorEntity):

@@ -44,7 +44,8 @@
           "scan_interval": "Polling interval (seconds)",
           "track_clients": "Track network clients",
           "client_filter": "Client filter",
-          "enable_new_clients": "Enable newly discovered clients by default"
+          "enable_new_clients": "Enable newly discovered clients by default",
+          "client_aliases": "Client name overrides (one per line: mac=Friendly Name)"
         }
       }
     }

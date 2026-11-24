@@ -50,6 +50,7 @@ class PortalSettings:
     sso_fqdn: str
     sso_client_id: str
     sso_redirect_url: str
+    portal_build: str | None = None
 
 
 class InstantOnApiClient:
@@ -83,6 +84,9 @@ class InstantOnApiClient:
                     raise InstantOnConnectionError(
                         f"Failed to fetch portal settings (HTTP {resp.status})"
                     )
+                portal_build = resp.headers.get("Last-Modified") or resp.headers.get(
+                    "ETag"
+                )
                 data = await resp.json(content_type=None)
         except (aiohttp.ClientError, TimeoutError) as err:
             raise InstantOnConnectionError(
@@ -95,6 +99,7 @@ class InstantOnApiClient:
                 sso_fqdn=data["ssoFqdn"].rstrip("/"),
                 sso_client_id=data["ssoClientIdAuthZ"],
                 sso_redirect_url=data["ssoRedirectUrl"],
+                portal_build=portal_build,
             )
         except KeyError as err:
             raise InstantOnConnectionError(
@@ -343,6 +348,7 @@ class InstantOnApiClient:
         app_usage_task = self._get_optional_json(
             f"/api/sites/{site_id}/applicationCategoryUsage"
         )
+        topology_task = self._get_optional_json(f"/api/sites/{site_id}/topology")
 
         (
             sites,
@@ -353,6 +359,7 @@ class InstantOnApiClient:
             wired_networks,
             alerts,
             app_usage,
+            topology,
         ) = await asyncio.gather(
             sites_task,
             landing_task,
@@ -362,6 +369,7 @@ class InstantOnApiClient:
             wired_task,
             alerts_task,
             app_usage_task,
+            topology_task,
         )
 
         site_info = next((s for s in sites if s.get("id") == site_id), {})
@@ -374,6 +382,8 @@ class InstantOnApiClient:
             "wired_networks": list((wired_networks or {}).get("elements", [])),
             "alerts": list((alerts or {}).get("elements", [])),
             "app_usage": list((app_usage or {}).get("elements", [])),
+            "topology": topology or {},
+            "portal_build": self._settings.portal_build if self._settings else None,
         }
 
 

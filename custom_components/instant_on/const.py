@@ -17,6 +17,7 @@ CONF_SCAN_INTERVAL: Final = "scan_interval"
 CONF_TRACK_CLIENTS: Final = "track_clients"
 CONF_CLIENT_FILTER: Final = "client_filter"
 CONF_ENABLE_NEW_CLIENTS: Final = "enable_new_clients"
+CONF_CLIENT_ALIASES: Final = "client_aliases"
 
 CLIENT_FILTER_ALL: Final = "all"
 CLIENT_FILTER_NAMED: Final = "named_only"

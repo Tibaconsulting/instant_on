@@ -16,6 +16,7 @@ from homeassistant.config_entries import (
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.selector import TextSelector, TextSelectorConfig
 
 from .api import (
     InstantOnApiClient,
@@ -28,6 +29,7 @@ from .const import (
     CLIENT_FILTER_NAMED,
     CLIENT_FILTER_WIRED,
     CLIENT_FILTER_WIRELESS,
+    CONF_CLIENT_ALIASES,
     CONF_CLIENT_FILTER,
     CONF_ENABLE_NEW_CLIENTS,
     CONF_SCAN_INTERVAL,
@@ -202,6 +204,28 @@ class InstantOnConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
 
+def _parse_client_aliases(raw: str) -> dict[str, str]:
+    """Parse 'mac=Friendly Name' lines into a normalized MAC -> name dict."""
+    aliases: dict[str, str] = {}
+    for line in raw.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        mac, name = line.split("=", 1)
+        mac_norm = mac.strip().lower().replace("-", ":")
+        name_clean = name.strip()
+        if mac_norm and name_clean:
+            aliases[mac_norm] = name_clean
+    return aliases
+
+
+def _format_client_aliases(aliases: Mapping[str, str] | None) -> str:
+    """Format a MAC -> name dict into 'mac=Friendly Name' lines."""
+    if not aliases:
+        return ""
+    return "\n".join(f"{mac}={name}" for mac, name in sorted(aliases.items()))
+
+
 class InstantOnOptionsFlow(OptionsFlow):
     """Handle options for HPE Instant On."""
 
@@ -210,7 +234,10 @@ class InstantOnOptionsFlow(OptionsFlow):
     ) -> ConfigFlowResult:
         """Manage the integration options."""
         if user_input is not None:
-            return self.async_create_entry(data=user_input)
+            data = dict(user_input)
+            raw_aliases = data.pop(CONF_CLIENT_ALIASES, "")
+            data[CONF_CLIENT_ALIASES] = _parse_client_aliases(raw_aliases)
+            return self.async_create_entry(data=data)
 
         options = self.config_entry.options
         return self.async_show_form(
@@ -243,6 +270,12 @@ class InstantOnOptionsFlow(OptionsFlow):
                         CONF_ENABLE_NEW_CLIENTS,
                         default=options.get(CONF_ENABLE_NEW_CLIENTS, True),
                     ): bool,
+                    vol.Optional(
+                        CONF_CLIENT_ALIASES,
+                        default=_format_client_aliases(
+                            options.get(CONF_CLIENT_ALIASES)
+                        ),
+                    ): TextSelector(TextSelectorConfig(multiline=True)),
                 }
             ),
         )

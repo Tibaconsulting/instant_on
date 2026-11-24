@@ -38,6 +38,8 @@ class InstantOnData:
     wired_networks: dict[str, dict[str, Any]]
     alerts: list[dict[str, Any]]
     app_usage: list[dict[str, Any]]
+    topology: dict[str, Any]
+    portal_build: str | None
     last_sync: datetime
 
 
@@ -100,5 +102,7 @@ class InstantOnCoordinator(DataUpdateCoordinator[InstantOnData]):
             wired_networks=wired_networks,
             alerts=raw["alerts"],
             app_usage=raw["app_usage"],
+            topology=raw.get("topology") or {},
+            portal_build=raw.get("portal_build"),
             last_sync=dt_util.utcnow(),
         )
