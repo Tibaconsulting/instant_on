@@ -69,9 +69,9 @@
       "poe_consumed": { "name": "PoE fogyasztás" },
       "poe_budget": { "name": "PoE keret" },
       "radio_utilization": { "name": "{band} rádió kihasználtság" },
-      "network_clients": { "name": "Csatlakozott kliensek" },
-      "network_downstream": { "name": "Letöltési sebesség" },
-      "network_upstream": { "name": "Feltöltési sebesség" }
+      "network_clients": { "name": "SSID {network} kliensek" },
+      "network_downstream": { "name": "SSID {network} letöltési sebesség" },
+      "network_upstream": { "name": "SSID {network} feltöltési sebesség" }
     },
     "binary_sensor": {
       "site_connectivity": { "name": "Elérhetőség" },
@@ -81,7 +81,7 @@
       "device_connectivity": { "name": "Elérhetőség" },
       "device_update_available": { "name": "Firmware frissítés elérhető" },
       "device_underpowered": { "name": "Alultáplált" },
-      "network_enabled": { "name": "Engedélyezve" }
+      "network_enabled": { "name": "SSID {network} engedélyezve" }
     },
     "button": {
       "refresh_now": { "name": "Frissítés most" }

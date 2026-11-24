@@ -69,9 +69,9 @@
       "poe_consumed": { "name": "PoE power consumed" },
       "poe_budget": { "name": "PoE power budget" },
       "radio_utilization": { "name": "{band} radio utilization" },
-      "network_clients": { "name": "Connected clients" },
-      "network_downstream": { "name": "Downstream throughput" },
-      "network_upstream": { "name": "Upstream throughput" }
+      "network_clients": { "name": "SSID {network} clients" },
+      "network_downstream": { "name": "SSID {network} downstream throughput" },
+      "network_upstream": { "name": "SSID {network} upstream throughput" }
     },
     "binary_sensor": {
       "site_connectivity": { "name": "Connectivity" },
@@ -81,7 +81,7 @@
       "device_connectivity": { "name": "Connectivity" },
       "device_update_available": { "name": "Firmware update available" },
       "device_underpowered": { "name": "Underpowered" },
-      "network_enabled": { "name": "Enabled" }
+      "network_enabled": { "name": "SSID {network} enabled" }
     },
     "button": {
       "refresh_now": { "name": "Refresh now" }

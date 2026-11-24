@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from homeassistant.components.device_tracker import ScannerEntity, SourceType
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import label_registry as lr
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
@@ -20,10 +23,42 @@ from .const import (
 from .coordinator import InstantOnConfigEntry, InstantOnCoordinator
 from .entity import InstantOnEntity
 
+_LOGGER = logging.getLogger(__name__)
 
-def _should_track_client(
-    client: dict[str, Any], client_filter: str
-) -> bool:
+# Lightweight OUI prefix table for common network/virtualization/IoT vendors
+# when Instant On does not report a hostname or classification.
+_OUI_VENDORS: dict[str, str] = {
+    "00:0c:29": "VMware",
+    "00:50:56": "VMware",
+    "00:15:5d": "Hyper-V",
+    "08:00:27": "VirtualBox",
+    "1c:98:ec": "HPE",
+    "a4:5d:36": "HPE",
+    "34:c5:15": "HPE Aruba",
+    "94:ff:06": "HPE Aruba",
+    "54:f0:b1": "HPE Aruba",
+    "b8:27:eb": "Raspberry Pi",
+    "dc:a6:32": "Raspberry Pi",
+    "e4:5f:01": "Raspberry Pi",
+    "2c:cf:67": "Raspberry Pi",
+    "7c:87:ce": "Espressif",
+    "9c:9c:1f": "Espressif",
+    "24:6f:28": "Espressif",
+    "30:ae:a4": "Espressif",
+    "00:11:32": "Synology",
+    "90:09:d0": "Synology",
+    "24:5e:be": "QNAP",
+    "00:e0:c5": "Bcom",
+}
+
+_AUTO_LABEL_PREFIXES = (
+    "Instant On: ",
+    "SSID: ",
+    "VLAN: ",
+)
+
+
+def _should_track_client(client: dict[str, Any], client_filter: str) -> bool:
     if client_filter == CLIENT_FILTER_WIRELESS:
         return client.get("clientType") == "wireless"
     if client_filter == CLIENT_FILTER_WIRED:
@@ -37,21 +72,61 @@ def _should_track_client(
 
 
 def _resolve_client_name(client: dict[str, Any], mac: str) -> str:
+    """Resolve the best human-readable friendly name for a client."""
     name = (client.get("name") or "").strip()
     if name and name.lower() != mac:
         return name
+
     host = (client.get("hostName") or "").strip()
     if host:
         return host
+
+    suffix = mac.replace(":", "")[-4:].upper()
+
+    for port in client.get("connectedToPorts") or []:
+        port_name = (port.get("portName") or "").strip()
+        if port_name:
+            return f"{port_name} ({suffix})"
+
     classifications = [
         c.get("str")
         for c in (client.get("classification") or [])
         if isinstance(c, dict) and c.get("str")
     ]
     if classifications:
-        suffix = mac.replace(":", "")[-4:].upper()
         return f"{classifications[0]} ({suffix})"
+
+    vendor = _OUI_VENDORS.get(mac[:8])
+    if vendor:
+        return f"{vendor} ({suffix})"
+
     return mac.upper()
+
+
+def _compute_client_labels(client: dict[str, Any]) -> list[str]:
+    """Compute grouping labels based on type, SSID/VLAN, function, and AP/switch."""
+    labels: list[str] = []
+
+    client_type = client.get("clientType")
+    if client_type == "wireless":
+        labels.append("Instant On: Wireless")
+    elif client_type == "wired":
+        labels.append("Instant On: Wired")
+
+    if ssid := client.get("wirelessNetworkName"):
+        labels.append(f"SSID: {ssid}")
+
+    if wired_net := client.get("wiredNetworkName"):
+        labels.append(f"VLAN: {wired_net}")
+
+    if dev_name := client.get("deviceName"):
+        labels.append(f"Instant On: {dev_name}")
+
+    for item in client.get("classification") or []:
+        if isinstance(item, dict) and (tag := item.get("str")):
+            labels.append(f"Instant On: {tag}")
+
+    return labels
 
 
 async def async_setup_entry(
@@ -103,10 +178,65 @@ class InstantOnClientTracker(InstantOnEntity, ScannerEntity):
         self._mac = mac
         self._attr_unique_id = f"{coordinator.site_id}_client_{mac}"
         self._attr_entity_registry_enabled_default = entity_registry_enabled_default
+        self._last_label_names: tuple[str, ...] = ()
 
     @property
     def _client(self) -> dict[str, Any] | None:
         return self.coordinator.data.clients.get(self._mac)
+
+    async def async_added_to_hass(self) -> None:
+        """Sync grouping labels when added to Home Assistant."""
+        await super().async_added_to_hass()
+        self._sync_labels()
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Update entity state and sync grouping labels on data refresh."""
+        self._sync_labels()
+        super()._handle_coordinator_update()
+
+    @callback
+    def _sync_labels(self) -> None:
+        """Keep HA entity labels in sync with client SSID/type/category/AP."""
+        client = self._client
+        if client is None or not self.entity_id:
+            return
+
+        desired_names = tuple(_compute_client_labels(client))
+        if desired_names == self._last_label_names:
+            return
+
+        try:
+            label_reg = lr.async_get(self.hass)
+            ent_reg = er.async_get(self.hass)
+        except Exception:
+            return
+
+        entry = ent_reg.async_get(self.entity_id)
+        if entry is None:
+            return
+
+        auto_label_ids: set[str] = set()
+        for name in desired_names:
+            label = label_reg.async_get_label_by_name(name)
+            if label is None:
+                label = label_reg.async_create(name=name)
+            auto_label_ids.add(label.label_id)
+
+        # Preserve any user-defined labels that don't use our auto prefixes
+        preserved_ids: set[str] = set()
+        for existing_id in entry.labels:
+            existing_label = label_reg.async_get_label(existing_id)
+            if existing_label and not existing_label.name.startswith(
+                _AUTO_LABEL_PREFIXES
+            ):
+                preserved_ids.add(existing_id)
+
+        new_labels = preserved_ids | auto_label_ids
+        if new_labels != entry.labels:
+            ent_reg.async_update_entity(self.entity_id, labels=new_labels)
+
+        self._last_label_names = desired_names
 
     @property
     def name(self) -> str:

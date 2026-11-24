@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
+from homeassistant.helpers.device_registry import (
+    CONNECTION_NETWORK_MAC,
+    DeviceEntryType,
+    DeviceInfo,
+)
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import ATTRIBUTION, DOMAIN
@@ -12,7 +16,7 @@ from .coordinator import InstantOnCoordinator
 
 
 def site_device_info(coordinator: InstantOnCoordinator) -> DeviceInfo:
-    """Return DeviceInfo for the Instant On site."""
+    """Return DeviceInfo for the Instant On site (whole home/location)."""
     site = coordinator.data.site
     landing = coordinator.data.landing_page
     site_name = site.get("name") or landing.get("siteName") or coordinator.site_id
@@ -21,6 +25,7 @@ def site_device_info(coordinator: InstantOnCoordinator) -> DeviceInfo:
         name=site_name,
         manufacturer="HPE Networking",
         model="Instant On Site",
+        entry_type=DeviceEntryType.SERVICE,
     )
 
 
@@ -39,21 +44,6 @@ def hardware_device_info(
         model=device.get("model") or device.get("deviceType"),
         sw_version=device.get("deviceSoftwareVersion"),
         serial_number=device.get("serialNumber"),
-        via_device=(DOMAIN, coordinator.site_id),
-    )
-
-
-def network_device_info(
-    coordinator: InstantOnCoordinator, network: dict[str, Any]
-) -> DeviceInfo:
-    """Return DeviceInfo for an Instant On wireless network (SSID)."""
-    net_id = network["id"]
-    net_name = network.get("networkName") or net_id
-    return DeviceInfo(
-        identifiers={(DOMAIN, f"{coordinator.site_id}_net_{net_id}")},
-        name=f"SSID {net_name}",
-        manufacturer="HPE Networking",
-        model="Instant On Wireless Network",
         via_device=(DOMAIN, coordinator.site_id),
     )
 

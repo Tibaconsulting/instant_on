@@ -19,7 +19,6 @@ from .coordinator import InstantOnConfigEntry, InstantOnCoordinator, InstantOnDa
 from .entity import (
     InstantOnEntity,
     hardware_device_info,
-    network_device_info,
     site_device_info,
 )
 
@@ -185,7 +184,9 @@ class InstantOnNetworkEnabledBinarySensor(InstantOnEntity, BinarySensorEntity):
         self._network_id = network_id
         self._attr_unique_id = f"{coordinator.site_id}_net_{network_id}_enabled"
         net = coordinator.data.networks[network_id]
-        self._attr_device_info = network_device_info(coordinator, net)
+        net_name = net.get("networkName") or network_id
+        self._attr_translation_placeholders = {"network": net_name}
+        self._attr_device_info = site_device_info(coordinator)
 
     @property
     def _network(self) -> dict[str, Any] | None:
