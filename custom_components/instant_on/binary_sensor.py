@@ -12,7 +12,7 @@ from homeassistant.components.binary_sensor import (
     BinarySensorEntityDescription,
 )
 from homeassistant.const import EntityCategory
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .coordinator import InstantOnConfigEntry, InstantOnCoordinator, InstantOnData
@@ -101,19 +101,37 @@ async def async_setup_entry(
 ) -> None:
     """Set up Instant On binary sensors from a config entry."""
     coordinator = entry.runtime_data
-    entities: list[BinarySensorEntity] = [
+    async_add_entities(
         InstantOnSiteBinarySensor(coordinator, desc) for desc in SITE_BINARY_SENSORS
-    ]
+    )
 
-    for dev_id, dev in coordinator.data.devices.items():
-        for desc in DEVICE_BINARY_SENSORS:
-            if desc.exists_fn(dev):
-                entities.append(InstantOnDeviceBinarySensor(coordinator, dev_id, desc))
+    known_devices: set[str] = set()
+    known_networks: set[str] = set()
 
-    for net_id in coordinator.data.networks:
-        entities.append(InstantOnNetworkEnabledBinarySensor(coordinator, net_id))
+    @callback
+    def _async_discover_entities() -> None:
+        new_entities: list[BinarySensorEntity] = []
+        for dev_id, dev in coordinator.data.devices.items():
+            if dev_id not in known_devices:
+                known_devices.add(dev_id)
+                for desc in DEVICE_BINARY_SENSORS:
+                    if desc.exists_fn(dev):
+                        new_entities.append(
+                            InstantOnDeviceBinarySensor(coordinator, dev_id, desc)
+                        )
 
-    async_add_entities(entities)
+        for net_id in coordinator.data.networks:
+            if net_id not in known_networks:
+                known_networks.add(net_id)
+                new_entities.append(
+                    InstantOnNetworkEnabledBinarySensor(coordinator, net_id)
+                )
+
+        if new_entities:
+            async_add_entities(new_entities)
+
+    _async_discover_entities()
+    entry.async_on_unload(coordinator.async_add_listener(_async_discover_entities))
 
 
 class InstantOnSiteBinarySensor(InstantOnEntity, BinarySensorEntity):

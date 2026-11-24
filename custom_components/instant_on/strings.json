@@ -61,6 +61,7 @@
       "active_alerts": { "name": "Active alerts" },
       "site_throughput": { "name": "Network throughput" },
       "site_traffic_24h": { "name": "24h data transferred" },
+      "last_sync": { "name": "Last sync" },
       "device_health": { "name": "Health" },
       "device_uptime": { "name": "Uptime" },
       "device_clients": { "name": "Connected clients" },

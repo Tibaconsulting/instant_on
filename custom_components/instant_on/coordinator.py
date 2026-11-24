@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 
 from .api import (
     InstantOnApiClient,
@@ -37,6 +38,7 @@ class InstantOnData:
     wired_networks: dict[str, dict[str, Any]]
     alerts: list[dict[str, Any]]
     app_usage: list[dict[str, Any]]
+    last_sync: datetime
 
 
 class InstantOnCoordinator(DataUpdateCoordinator[InstantOnData]):
@@ -98,4 +100,5 @@ class InstantOnCoordinator(DataUpdateCoordinator[InstantOnData]):
             wired_networks=wired_networks,
             alerts=raw["alerts"],
             app_usage=raw["app_usage"],
+            last_sync=dt_util.utcnow(),
         )

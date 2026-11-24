@@ -20,7 +20,7 @@ from homeassistant.const import (
     UnitOfPower,
     UnitOfTime,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .coordinator import InstantOnConfigEntry, InstantOnCoordinator, InstantOnData
@@ -150,6 +150,13 @@ SITE_SENSORS: tuple[InstantOnSiteSensorDescription, ...] = (
             "totalDataTransferredDuringLast24HoursInBytes"
         ),
     ),
+    InstantOnSiteSensorDescription(
+        key="last_sync",
+        translation_key="last_sync",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: d.last_sync,
+    ),
 )
 
 
@@ -258,24 +265,46 @@ async def async_setup_entry(
 ) -> None:
     """Set up Instant On sensors from a config entry."""
     coordinator = entry.runtime_data
-    entities: list[SensorEntity] = [
+    async_add_entities(
         InstantOnSiteSensor(coordinator, desc) for desc in SITE_SENSORS
-    ]
+    )
 
-    for dev_id, dev in coordinator.data.devices.items():
-        for desc in DEVICE_SENSORS:
-            if desc.exists_fn(dev):
-                entities.append(InstantOnDeviceSensor(coordinator, dev_id, desc))
-        for radio in dev.get("radios") or []:
-            band = radio.get("band")
-            if band:
-                entities.append(InstantOnRadioSensor(coordinator, dev_id, band))
+    known_devices: set[str] = set()
+    known_radios: set[tuple[str, str]] = set()
+    known_networks: set[str] = set()
 
-    for net_id in coordinator.data.networks:
-        for desc in NETWORK_SENSORS:
-            entities.append(InstantOnNetworkSensor(coordinator, net_id, desc))
+    @callback
+    def _async_discover_entities() -> None:
+        new_entities: list[SensorEntity] = []
+        for dev_id, dev in coordinator.data.devices.items():
+            if dev_id not in known_devices:
+                known_devices.add(dev_id)
+                for desc in DEVICE_SENSORS:
+                    if desc.exists_fn(dev):
+                        new_entities.append(
+                            InstantOnDeviceSensor(coordinator, dev_id, desc)
+                        )
+            for radio in dev.get("radios") or []:
+                band = radio.get("band")
+                if band and (dev_id, band) not in known_radios:
+                    known_radios.add((dev_id, band))
+                    new_entities.append(
+                        InstantOnRadioSensor(coordinator, dev_id, band)
+                    )
 
-    async_add_entities(entities)
+        for net_id in coordinator.data.networks:
+            if net_id not in known_networks:
+                known_networks.add(net_id)
+                for desc in NETWORK_SENSORS:
+                    new_entities.append(
+                        InstantOnNetworkSensor(coordinator, net_id, desc)
+                    )
+
+        if new_entities:
+            async_add_entities(new_entities)
+
+    _async_discover_entities()
+    entry.async_on_unload(coordinator.async_add_listener(_async_discover_entities))
 
 
 class InstantOnSiteSensor(InstantOnEntity, SensorEntity):

@@ -61,6 +61,7 @@
       "active_alerts": { "name": "Aktív riasztások" },
       "site_throughput": { "name": "Hálózati átvitel" },
       "site_traffic_24h": { "name": "24 órás adatforgalom" },
+      "last_sync": { "name": "Utolsó szinkronizálás" },
       "device_health": { "name": "Állapot" },
       "device_uptime": { "name": "Üzemidő" },
       "device_clients": { "name": "Csatlakozott kliensek" },

@@ -9,7 +9,7 @@ DOMAIN: Final = "instant_on"
 PORTAL_BASE_URL: Final = "https://portal.instant-on.hpe.com"
 SETTINGS_PATH: Final = "/settings.json"
 API_VERSION_HEADER: Final = "x-ion-api-version"
-API_VERSION: Final = "7"
+API_VERSION: Final = "20"
 
 CONF_SITE_ID: Final = "site_id"
 CONF_SITE_NAME: Final = "site_name"
