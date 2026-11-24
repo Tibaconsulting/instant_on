@@ -1,0 +1,90 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to HPE Instant On",
+        "description": "Sign in with a dedicated, MFA-disabled Instant On account (view-only role recommended).",
+        "data": {
+          "username": "Email address",
+          "password": "Password"
+        }
+      },
+      "site": {
+        "title": "Select Instant On site",
+        "description": "Choose which site to monitor with this integration.",
+        "data": {
+          "site_id": "Site"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate HPE Instant On",
+        "description": "Update your Instant On account credentials.",
+        "data": {
+          "username": "Email address",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the HPE Instant On portal.",
+      "invalid_auth": "Invalid credentials or MFA is enabled on this account.",
+      "no_sites": "No Instant On sites were found for this account.",
+      "unknown": "Unexpected error occurred."
+    },
+    "abort": {
+      "already_configured": "This Instant On site is already configured.",
+      "reauth_successful": "Re-authentication was successful."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "HPE Instant On options",
+        "data": {
+          "scan_interval": "Polling interval (seconds)",
+          "track_clients": "Track network clients",
+          "client_filter": "Client filter",
+          "enable_new_clients": "Enable newly discovered clients by default"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "site_health": { "name": "Health" },
+      "health_score": { "name": "Health score" },
+      "total_clients": { "name": "Total clients" },
+      "wireless_clients": { "name": "Wireless clients" },
+      "wired_clients": { "name": "Wired clients" },
+      "devices_up": { "name": "Devices online" },
+      "devices_total": { "name": "Devices total" },
+      "active_alerts": { "name": "Active alerts" },
+      "site_throughput": { "name": "Network throughput" },
+      "site_traffic_24h": { "name": "24h data transferred" },
+      "device_health": { "name": "Health" },
+      "device_uptime": { "name": "Uptime" },
+      "device_clients": { "name": "Connected clients" },
+      "device_ip_address": { "name": "IP address" },
+      "device_software_version": { "name": "Firmware version" },
+      "poe_consumed": { "name": "PoE power consumed" },
+      "poe_budget": { "name": "PoE power budget" },
+      "radio_utilization": { "name": "{band} radio utilization" },
+      "network_clients": { "name": "Connected clients" },
+      "network_downstream": { "name": "Downstream throughput" },
+      "network_upstream": { "name": "Upstream throughput" }
+    },
+    "binary_sensor": {
+      "site_connectivity": { "name": "Connectivity" },
+      "site_active_alerts": { "name": "Active alerts" },
+      "update_in_progress": { "name": "Firmware update in progress" },
+      "maintenance_mode": { "name": "Maintenance mode" },
+      "device_connectivity": { "name": "Connectivity" },
+      "device_update_available": { "name": "Firmware update available" },
+      "device_underpowered": { "name": "Underpowered" },
+      "network_enabled": { "name": "Enabled" }
+    },
+    "button": {
+      "refresh_now": { "name": "Refresh now" }
+    }
+  }
+}

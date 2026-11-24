@@ -1,0 +1,90 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Csatlakozás a HPE Instant On portálhoz",
+        "description": "Jelentkezzen be egy dedikált, MFA nélküli Instant On fiókkal (csak megtekintési jogosultság ajánlott).",
+        "data": {
+          "username": "E-mail cím",
+          "password": "Jelszó"
+        }
+      },
+      "site": {
+        "title": "Instant On telephely kiválasztása",
+        "description": "Válassza ki a figyelni kívánt telephelyet.",
+        "data": {
+          "site_id": "Telephely"
+        }
+      },
+      "reauth_confirm": {
+        "title": "HPE Instant On újrahitelesítés",
+        "description": "Frissítse az Instant On fiók hitelesítő adatait.",
+        "data": {
+          "username": "E-mail cím",
+          "password": "Jelszó"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Nem sikerült csatlakozni a HPE Instant On portálhoz.",
+      "invalid_auth": "Érvénytelen hitelesítő adatok, vagy az MFA be van kapcsolva ezen a fiókon.",
+      "no_sites": "Nem található Instant On telephely ehhez a fiókhoz.",
+      "unknown": "Váratlan hiba történt."
+    },
+    "abort": {
+      "already_configured": "Ez az Instant On telephely már konfigurálva van.",
+      "reauth_successful": "Az újrahitelesítés sikeres volt."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "HPE Instant On beállítások",
+        "data": {
+          "scan_interval": "Lekérdezési időköz (másodperc)",
+          "track_clients": "Hálózati kliensek követése",
+          "client_filter": "Kliensszűrő",
+          "enable_new_clients": "Új kliensek automatikus engedélyezése"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "site_health": { "name": "Állapot" },
+      "health_score": { "name": "Állapotpontszám" },
+      "total_clients": { "name": "Összes kliens" },
+      "wireless_clients": { "name": "Wi-Fi kliensek" },
+      "wired_clients": { "name": "Vezetékes kliensek" },
+      "devices_up": { "name": "Elérhető eszközök" },
+      "devices_total": { "name": "Összes eszköz" },
+      "active_alerts": { "name": "Aktív riasztások" },
+      "site_throughput": { "name": "Hálózati átvitel" },
+      "site_traffic_24h": { "name": "24 órás adatforgalom" },
+      "device_health": { "name": "Állapot" },
+      "device_uptime": { "name": "Üzemidő" },
+      "device_clients": { "name": "Csatlakozott kliensek" },
+      "device_ip_address": { "name": "IP-cím" },
+      "device_software_version": { "name": "Firmware verzió" },
+      "poe_consumed": { "name": "PoE fogyasztás" },
+      "poe_budget": { "name": "PoE keret" },
+      "radio_utilization": { "name": "{band} rádió kihasználtság" },
+      "network_clients": { "name": "Csatlakozott kliensek" },
+      "network_downstream": { "name": "Letöltési sebesség" },
+      "network_upstream": { "name": "Feltöltési sebesség" }
+    },
+    "binary_sensor": {
+      "site_connectivity": { "name": "Elérhetőség" },
+      "site_active_alerts": { "name": "Aktív riasztások" },
+      "update_in_progress": { "name": "Firmware frissítés folyamatban" },
+      "maintenance_mode": { "name": "Karbantartási mód" },
+      "device_connectivity": { "name": "Elérhetőség" },
+      "device_update_available": { "name": "Firmware frissítés elérhető" },
+      "device_underpowered": { "name": "Alultáplált" },
+      "network_enabled": { "name": "Engedélyezve" }
+    },
+    "button": {
+      "refresh_now": { "name": "Frissítés most" }
+    }
+  }
+}
